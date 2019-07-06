@@ -1,0 +1,14 @@
+@import '../../../../../styles/colors';
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.list__spinner {
+  align-self: center;
+}
+
+.list__summary {
+  margin-bottom: 1.5rem;
+}
