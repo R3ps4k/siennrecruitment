@@ -34,6 +34,19 @@
     <mat-icon matSuffix class="product-form__icon">info</mat-icon>
   </mat-form-field>
 
+  <mat-checkbox formControlName="expDateCheckbox">Product may expire</mat-checkbox>
+  <mat-form-field class="product-form__field">
+    <input matInput
+          [matDatepicker]="expirationDate"
+          placeholder="Choose expiration date"
+          formControlName="expirationDate">
+    <mat-datepicker-toggle matSuffix [for]="expirationDate"></mat-datepicker-toggle>
+    <mat-datepicker #expirationDate></mat-datepicker>
+    <mat-error *ngIf="productForm.controls['expirationDate'].invalid">
+        Must be a future date.
+      </mat-error>
+  </mat-form-field>
+
   <div class="product-form__buttons-group">
     <button mat-raised-button
             type="submit"

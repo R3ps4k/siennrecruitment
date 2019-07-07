@@ -1,11 +1,20 @@
-import {ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild
+} from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from '@angular/forms';
 
-import {Product} from '@root/app/shared/models/product.model';
-import {Page} from '@root/app/shared/constants/pages.constant';
-import {NavigationService} from '@root/app/shared/services';
-import {ProductService} from '@root/app/modules/products/services';
-import {ProductFormType} from '@root/app/shared/constants/product-form.constant';
+import { Product } from '@root/app/shared/models/product.model';
+import { Page } from '@root/app/shared/constants/pages.constant';
+import { NavigationService } from '@root/app/shared/services';
+import { ProductService } from '@root/app/modules/products/services';
+import { ProductFormType } from '@root/app/shared/constants/product-form.constant';
 
 @Component({
   selector: 'my-product-form',
@@ -24,7 +33,9 @@ export class ProductFormComponent implements OnInit {
     }
   }
 
-  @Output() public formSubmit: EventEmitter<Product> = new EventEmitter<Product>();
+  @Output() public formSubmit: EventEmitter<Product> = new EventEmitter<
+    Product
+  >();
 
   public _product: Product;
   public productForm: FormGroup;
@@ -47,11 +58,19 @@ export class ProductFormComponent implements OnInit {
     return this.isEditForm ? 'save' : 'add_circle';
   }
 
+  /// get date depending on checkBox state
+  private get expirationDate(): Date {
+    return this.productForm.get('expDateCheckbox').value
+      ? this.productForm.get('expirationDate').value
+      : new Date('0001-01-01');
+  }
+
   public get preparedProduct(): Product {
     return {
       name: this.productForm.value.name,
       description: this.productForm.value.description,
-      price: this.productForm.value.price
+      price: this.productForm.value.price,
+      expirationDate: this.expirationDate
     };
   }
 
@@ -66,13 +85,35 @@ export class ProductFormComponent implements OnInit {
     this.productForm = this.formBuilder.group({
       description: [''],
       name: ['', Validators.required],
-      price: [0, Validators.required]
+      price: [0, Validators.required],
+      expDateCheckbox: [false],
+      expirationDate: [{ value: '', disabled: true }, this.futureDateValidator()]
     });
     this._product = {
       productID: '',
       name: '',
       description: '',
+      expirationDate: null,
       price: 0
+    };
+
+    this.productForm
+      .get('expDateCheckbox')
+      .statusChanges.subscribe(_ => this.toggleExpDate());
+
+  }
+
+  /// enable/disable expirationDate field depending on checkBox state
+  toggleExpDate() {
+    const expDate = this.productForm.get('expirationDate');
+    this.productForm.get('expDateCheckbox').value ? expDate.enable() : expDate.disable();
+  }
+
+   /// expiration date validator function
+   futureDateValidator(): ValidatorFn {
+    return (control: AbstractControl): {[key: string]: any} | null => {
+      const forbidden = new Date(control.value) < new Date();
+      return forbidden ? {'futureDateValidator': {value: control.value}} : null;
     };
   }
 
@@ -100,7 +141,15 @@ export class ProductFormComponent implements OnInit {
     this.productForm.reset({
       name: this._product.name,
       description: this._product.description,
+      expirationDate: this._product.expirationDate,
       price: this._product.price
     });
+
+   /// set checkBox value('true') if expiration date had been arleady set
+   if (new Date(this.productForm.get('expirationDate').value) > new Date('0001-01-01') ) {
+      this.productForm.get('expDateCheckbox').setValue('true');
+    } else {
+      this.productForm.get('expirationDate').setValue(null);
+    }
   }
 }
